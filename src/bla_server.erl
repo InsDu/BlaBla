@@ -30,12 +30,25 @@ info() ->
 
 add_user(Name) ->
     gen_server:call({local, ?MODULE}, {add_user, Name}).
+	
+find_user(Name) ->
+    gen_server:call({local, ?MODULE}, {find_user, Name}).
 
 
 init({Name, Max}) ->
     #state{name = Name,
            maxLoginUsers = Max}.
 
+
+handle_call({find_user, UserName}, _From, #state{users=Users} = S) ->
+    Result = 
+	    case lists:keysearch(UserName, 2, Users) of
+            false ->
+                not_exist;
+            {value, User} ->
+                User
+        end,
+	{reply, Result, S};
 handle_call({add_user, UserName}, _From, #state{users=Users} = S) ->
     User = #user{name = UserName,
                  status = off},
