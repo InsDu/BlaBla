@@ -12,8 +12,12 @@
 %% API
 -export([start/2,
          info/0,
-         add_user/1]).
--export([init/1, handle_call/3]).
+         add_user/1,
+         send_msg/1]).
+
+-export([init/1,
+         handle_call/3,
+         handle_cast/3]).
 
 -record(user, {name,
                status = off % on|off|busy
@@ -34,6 +38,8 @@ add_user(Name) ->
 find_user(Name) ->
     gen_server:call({local, ?MODULE}, {find_user, Name}).
 
+send_msg(From, To, Msg) ->
+    gen_server:cast({local, ?MODULE}, {send_msg, From, To, Msg}).
 
 init({Name, Max}) ->
     #state{name = Name,
@@ -57,9 +63,16 @@ handle_call({add_user, UserName}, _From, #state{users=Users} = S) ->
     {reply, ok, NewS};
 handle_call(info, _From, S) ->
     Info = {S#state.name, S#state.users},
+    io:format("BlaBla: ~p~n", [Info]),
     {reply, Info, S};
 handle_call(_Request, _From, S) ->
     {reply, not_supported_request, S}.
+
+handle_cast({send_msg, From, To, Msg}, _From, S) ->
+    io:format("send_msg: from ~p to ~p, content: ~p~n", [From, To, Msg]),
+    {noreply, S};
+handle_cast(_, _From, S) ->
+    {noreply, S}.
 
 add_user(#user{name = Name} = User, Users) ->
     case lists:keyfind(Name, 2, Users) of
